@@ -14,11 +14,13 @@ MODEL_NAME = "Junginn/kcelectra-toxic-comment-detector_V1"  # 실제 모델 경�
 TOKENIZER_NAME = "beomi/KcELECTRA-base"   # ✅ 토크나이저는 베이스에서
 
 
-tokenizer = AutoTokenizer.from_pretrained(
-    MODEL_NAME,
-    token=HF_AUTH_TOKEN,      # use_auth_token -> token (경고 제거)
-    use_fast=False            # 핵심! fast 토크나이저 비활성화
+# ✅ BertTokenizer로 명시 (get_vocab 구현되어 있음)
+tokenizer = BertTokenizer.from_pretrained(
+    TOKENIZER_NAME,
+    token=HF_AUTH_TOKEN,
+    do_lower_case=False
 )
+
 model = AutoModelForSequenceClassification.from_pretrained(
     MODEL_NAME,
     token=HF_AUTH_TOKEN       # 동일하게 token 파라미터 사용
