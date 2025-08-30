@@ -6,14 +6,42 @@ services:
     buildCommand: >
       pip install --upgrade pip &&
       pip install -r requirements.txt &&
-      python -c "import os; from huggingface_hub import snapshot_download;
-local='hf_model'; os.makedirs(local, exist_ok=True);
-snapshot_download(repo_id='Junginn/kcelectra-toxic-comment-detector_V1', local_dir=os.path.join(local,'model'), token=os.environ.get('HF_AUTH_TOKEN'));
-snapshot_download(repo_id='beomi/KcELECTRA-base', local_dir=os.path.join(local,'tokenizer'), token=os.environ.get('HF_AUTH_TOKEN'))"
+      python - <<'PY'
+      import os
+      from huggingface_hub import snapshot_download
+
+      local = "hf_model"
+      os.makedirs(os.path.join(local, "model"), exist_ok=True)
+      os.makedirs(os.path.join(local, "tokenizer"), exist_ok=True)
+
+      # 모델 가중치(분류기)
+      snapshot_download(
+          repo_id="Junginn/kcelectra-toxic-comment-detector_V1",
+          local_dir=os.path.join(local, "model"),
+          local_dir_use_symlinks=False,   # ★ 심볼릭 링크 금지
+          token=os.environ.get("HF_AUTH_TOKEN"),
+      )
+
+      # 토크나이저(KcELECTRA-base)
+      snapshot_download(
+          repo_id="beomi/KcELECTRA-base",
+          local_dir=os.path.join(local, "tokenizer"),
+          local_dir_use_symlinks=False,   # ★ 심볼릭 링크 금지
+          token=os.environ.get("HF_AUTH_TOKEN"),
+      )
+
+      # 디버그: 실제 파일 구조 출력
+      for p in [os.path.join(local, "model"), os.path.join(local, "tokenizer")]:
+          print("== Contents of:", p)
+          for root, dirs, files in os.walk(p):
+              print(root)
+              for f in files:
+                  print("  -", f)
+      PY
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
       - key: TRANSFORMERS_OFFLINE
         value: "1"
-      # HF_AUTH_TOKEN 은 여기 말고 Render 대시보드 → Environment 에 추가(Protected)하세요.
+      # HF_AUTH_TOKEN 은 Render 대시보드에 Protected로 추가
