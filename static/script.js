@@ -6,23 +6,37 @@ function submitComment() {
   fetch("/predict", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: text })
+    body: JSON.stringify({ text }),
   })
-  .then(res => res.json())
-  .then(data => {
-    const color = data.confidence_color;
+    .then(async (res) => {
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        console.error("predict failed", res.status, body);
+        alert(
+          body.error || "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+        );
+        return null;
+      }
+      return body;
+    })
+    .then((data) => {
+      if (!data) return;
+      const color = data.confidence_color;
 
-    if (color === "red") {
-      showPopup("danger");
-    } else if (color === "orange") {
-      showPopup("warning");
-    } else {
-      postComment(text);
-      input.value = "";  // 일반 댓글도 작성 후 초기화!
-    }
-  });
+      if (color === "red") {
+        showPopup("danger");
+      } else if (color === "orange") {
+        showPopup("warning");
+      } else {
+        postComment(text);
+        input.value = "";
+      }
+    })
+    .catch((err) => {
+      console.error("network error", err);
+      alert("네트워크 오류가 발생했습니다.");
+    });
 }
-
 
 function showPopup(level) {
   const popup = document.getElementById("popup");
@@ -38,15 +52,16 @@ function showPopup(level) {
   // ⬇️ 팝업 텍스트 및 이미지 변경
   if (level === "danger") {
     title.textContent = "부정적인 표현이 많습니다";
-    text.textContent = "해당 댓글은 다른 사용자에게 불쾌감을 줄 수 있어요. 게시 전 다시 확인해 주세요.";
+    text.textContent =
+      "해당 댓글은 다른 사용자에게 불쾌감을 줄 수 있어요. 게시 전 다시 확인해 주세요.";
     icon.src = "/static/warning-red.png";
   } else {
     title.textContent = "권장되지 않는 표현이 포함되어 있어요";
-    text.textContent = "해당 댓글은 표현이 부적절할 수 있어요. 다시 한번 검토해 주세요.";
+    text.textContent =
+      "해당 댓글은 표현이 부적절할 수 있어요. 다시 한번 검토해 주세요.";
     icon.src = "/static/warning-yellow.png";
   }
 }
-
 
 function rewriteComment() {
   document.getElementById("popup").classList.add("hidden");
@@ -55,9 +70,9 @@ function rewriteComment() {
 function postAnyway() {
   const input = document.getElementById("commentInput");
   const text = input.value.trim();
-  if (!text) return;  // 빈 값이면 무시
+  if (!text) return; // 빈 값이면 무시
   postComment(text);
-  input.value = "";   // 입력창 초기화
+  input.value = ""; // 입력창 초기화
   document.getElementById("popup").classList.add("hidden");
 }
 
@@ -67,7 +82,8 @@ function getRelativeTime(date) {
 
   if (diffSec < 60) return "방금 전";
   else if (diffSec < 3600) return `${Math.floor(diffSec / 60)}분 전`;
-  else return `${now.getHours()}:${now.getMinutes().toString().padStart(2, "0")}`;
+  else
+    return `${now.getHours()}:${now.getMinutes().toString().padStart(2, "0")}`;
 }
 
 function postComment(text) {

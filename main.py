@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 import os, time, requests
 from typing import List, Dict, Any
 
-HF_MODEL_ID = os.environ.get("HF_MODEL_ID", "Junginn/kcelectra-toxic-comment-detector_V1")
+HF_MODEL_ID = os.environ.get("HF_MODEL_ID", "")
 HF_API_TOKEN = os.environ.get("HF_API_TOKEN", "")
 HF_API_URL = f"https://api-inference.huggingface.co/models/{HF_MODEL_ID}"
 HEADERS = {"Authorization": f"Bearer {HF_API_TOKEN}"} if HF_API_TOKEN else {}
