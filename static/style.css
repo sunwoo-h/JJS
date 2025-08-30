@@ -1,0 +1,152 @@
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  background: #f9f9f9;
+}
+
+/* 댓글 전체 박스 */
+.comment-container {
+  width: 360px;
+  margin: 30px auto;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 15px;
+  color: #666;
+  margin-top: -5px;
+  margin-bottom: 10px;
+}
+
+
+h2 {
+  text-align: center;
+  margin: 10px 0;
+}
+
+.comment-list {
+  padding: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* 댓글 입력 박스 */
+.comment-input-box {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid #ccc;
+  padding: 10px;
+}
+
+.comment-input-box input {
+  flex: 1;
+  padding: 8px;
+  margin: 0 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.comment-input-box button {
+  background: black;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.comment-input-box button:hover {
+  background: #333;
+}
+
+/* 아바타 */
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+/* 팝업 기본 */
+.popup {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 320px;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  padding: 20px;
+  z-index: 999;
+}
+
+/* 처음에는 숨김 */
+.popup.hidden {
+  display: none;
+}
+
+.popup-icon {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 10px;
+}
+
+.popup-content h3 {
+  margin: 10px 0 5px;
+  font-size: 16px;
+}
+
+.popup-content p {
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.popup-actions {
+  margin-top: 15px;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* 팝업 버튼 */
+.popup-actions .popup-button {
+  padding: 6px 12px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.popup-button.cancel {
+  background-color: #eee;
+  color: black;
+}
+
+.popup-button.confirm {
+  background-color: #ddd;
+  color: black;
+}
+
+/* 단계별 팝업 강조 */
+.popup.warning {
+  border-left: 5px solid #fbbc04;
+}
+
+.popup.danger {
+  border-left: 5px solid #d93025;
+}
+
+.popup.danger .popup-button.confirm {
+  background-color: #d93025;
+  color: white;
+}
+
+.popup.warning .popup-button.confirm {
+  background-color: #fbbc04;
+  color: black;
+}

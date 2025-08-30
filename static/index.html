@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>Comment UI</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="comment-container">
+    <h2>댓글 위험도 분석 ⌨️ </h2>
+    <p class="subtitle">
+      전공종합설계및논문 <br />
+      7조 신지환 김민재 윤소원 안정인 황선우
+    </p>
+    
+    <div id="commentList" class="comment-list">
+      <!-- 댓글 리스트가 여기에 표시됩니다 -->
+    </div>
+
+    <div class="comment-input-box">
+      <img src="/static/user.png" alt="user" class="avatar" />
+      <input id="commentInput" type="text" placeholder="댓글을 입력해주세요 ..." />
+      <button onclick="submitComment()">작성 🖊</button>
+    </div>
+  </div>
+
+  <!-- 경고 팝업 -->
+  <div id="popup" class="popup hidden">
+    <div class="popup-content">
+      <img id="popupIcon" src="/static/warning-yellow.png" class="popup-icon" />
+      <h3 id="popupTitle">경고</h3>
+      <p id="popupText">해당 댓글은 표현이 부적절할 수 있어요. 다시 확인해주세요.</p>
+      <div class="popup-actions">
+        <button class="popup-button cancel" onclick="rewriteComment()">다시 작성하기</button>
+        <button id="continueBtn" class="popup-button confirm" onclick="postAnyway()">계속하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS 파일 연결 -->
+  <script src="/static/script.js"></script>
+</body>
+</html>
