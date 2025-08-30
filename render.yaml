@@ -14,4 +14,6 @@ snapshot_download(repo_id='beomi/KcELECTRA-base', local_dir=os.path.join(local,'
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
+      - key: TRANSFORMERS_OFFLINE
+        value: "1"
       # HF_AUTH_TOKEN 은 여기 말고 Render 대시보드 → Environment 에 추가(Protected)하세요.

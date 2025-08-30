@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import BertTokenizerFast, AutoModelForSequenceClassification
 from dotenv import load_dotenv
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -16,7 +16,7 @@ TOKENIZER_DIR = os.path.join(HF_LOCAL_DIR, "tokenizer")
 MODEL_DIR = os.path.join(HF_LOCAL_DIR, "model")
 
 # fast 토크나이저 (vocab.txt 필요 없음)
-tokenizer = AutoTokenizer.from_pretrained(
+tokenizer = BertTokenizerFast.from_pretrained(
     TOKENIZER_DIR,
     local_files_only=True,
 )
