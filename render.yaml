@@ -5,43 +5,12 @@ services:
     plan: free
     buildCommand: >
       pip install --upgrade pip &&
-      pip install -r requirements.txt &&
-      python - <<'PY'
-      import os
-      from huggingface_hub import snapshot_download
-
-      local = "hf_model"
-      os.makedirs(os.path.join(local, "model"), exist_ok=True)
-      os.makedirs(os.path.join(local, "tokenizer"), exist_ok=True)
-
-      # 모델 가중치(분류기)
-      snapshot_download(
-          repo_id="Junginn/kcelectra-toxic-comment-detector_V1",
-          local_dir=os.path.join(local, "model"),
-          local_dir_use_symlinks=False,   # ★ 심볼릭 링크 금지
-          token=os.environ.get("HF_AUTH_TOKEN"),
-      )
-
-      # 토크나이저(KcELECTRA-base)
-      snapshot_download(
-          repo_id="beomi/KcELECTRA-base",
-          local_dir=os.path.join(local, "tokenizer"),
-          local_dir_use_symlinks=False,   # ★ 심볼릭 링크 금지
-          token=os.environ.get("HF_AUTH_TOKEN"),
-      )
-
-      # 디버그: 실제 파일 구조 출력
-      for p in [os.path.join(local, "model"), os.path.join(local, "tokenizer")]:
-          print("== Contents of:", p)
-          for root, dirs, files in os.walk(p):
-              print(root)
-              for f in files:
-                  print("  -", f)
-      PY
+      pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
+      # 오프라인 모드 끄기 (런타임에서 필요하면 내려받기 위함)
       - key: TRANSFORMERS_OFFLINE
-        value: "1"
-      # HF_AUTH_TOKEN 은 Render 대시보드에 Protected로 추가
+        value: "0"
+      # Render 대시보드에 HF_AUTH_TOKEN(Protected) 등록해두면 비공개/요청 많은 허브 접근 시 안정적
