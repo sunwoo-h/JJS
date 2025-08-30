@@ -12,8 +12,15 @@ load_dotenv()
 HF_AUTH_TOKEN = os.getenv("HF_AUTH_TOKEN")
 MODEL_NAME = "Junginn/kcelectra-toxic-comment-detector_V1"  # 실제 모델 경로로 수정
 
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_auth_token=HF_AUTH_TOKEN)
-model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME, use_auth_token=HF_AUTH_TOKEN)
+tokenizer = AutoTokenizer.from_pretrained(
+    MODEL_NAME,
+    token=HF_AUTH_TOKEN,      # use_auth_token -> token (경고 제거)
+    use_fast=False            # 핵심! fast 토크나이저 비활성화
+)
+model = AutoModelForSequenceClassification.from_pretrained(
+    MODEL_NAME,
+    token=HF_AUTH_TOKEN       # 동일하게 token 파라미터 사용
+)
 model.tokenizer = tokenizer  # infer 함수에서 쓰기 위해
 model.eval()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
