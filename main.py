@@ -1,8 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import torch
-# ⬇️ BertTokenizer 추가, use_auth_token 경고 없애기 위해 token 사용
-from transformers import BertTokenizer, AutoModelForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from dotenv import load_dotenv
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -11,16 +10,16 @@ import os
 # 환경변수 불러오기
 load_dotenv()
 HF_AUTH_TOKEN = os.getenv("HF_AUTH_TOKEN")
+
 MODEL_NAME = "Junginn/kcelectra-toxic-comment-detector_V1"  # 실제 모델 경로로 수정
 TOKENIZER_NAME = "beomi/KcELECTRA-base"   # ✅ 토크나이저는 베이스에서
 
 
-# ✅ BertTokenizer로 명시 (get_vocab 구현되어 있음)
-tokenizer = BertTokenizer.from_pretrained(
+tokenizer = AutoTokenizer.from_pretrained(
     TOKENIZER_NAME,
-    do_lower_case=False,
-    token=HF_AUTH_TOKEN,           # use_auth_token 대신 token 사용
+    token=HF_AUTH_TOKEN,       # use_auth_token 대신
 )
+
 
 model = AutoModelForSequenceClassification.from_pretrained(
     MODEL_NAME,
