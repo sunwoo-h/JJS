@@ -10,7 +10,5 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
-      # 오프라인 모드 끄기 (런타임에서 필요하면 내려받기 위함)
-      - key: TRANSFORMERS_OFFLINE
-        value: "0"
-      # Render 대시보드에 HF_AUTH_TOKEN(Protected) 등록해두면 비공개/요청 많은 허브 접근 시 안정적
+      - key: HF_API_TOKEN # ← Render 대시보드에 Protected로 값 넣기
+        sync: false

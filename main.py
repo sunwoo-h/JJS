@@ -1,83 +1,13 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import os
-import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-from dotenv import load_dotenv
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+import os, requests
 
-load_dotenv()
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-HF_LOCAL_DIR = os.path.join(BASE_DIR, "hf_model")
-TOKENIZER_DIR = os.path.join(HF_LOCAL_DIR, "tokenizer")
-MODEL_DIR = os.path.join(HF_LOCAL_DIR, "model")
-
-# ★ 런타임 부트스트랩: 폴더 없거나 비어 있으면 즉시 다운로드
-def ensure_hf_assets():
-    os.makedirs(TOKENIZER_DIR, exist_ok=True)
-    os.makedirs(MODEL_DIR, exist_ok=True)
-
-    def is_empty(path: str) -> bool:
-        return (not os.path.isdir(path)) or (len(os.listdir(path)) == 0)
-
-    need_tokenizer = is_empty(TOKENIZER_DIR)
-    need_model = is_empty(MODEL_DIR)
-
-    if need_tokenizer or need_model:
-        from huggingface_hub import snapshot_download
-        hf_token = os.environ.get("HF_AUTH_TOKEN")  # 있으면 사용, 없어도 공개모델이면 동작
-
-        if need_tokenizer:
-            snapshot_download(
-                repo_id="beomi/KcELECTRA-base",
-                local_dir=TOKENIZER_DIR,
-                local_dir_use_symlinks=False,   # 심볼릭 링크 금지
-                token=hf_token,
-            )
-
-        if need_model:
-            snapshot_download(
-                repo_id="Junginn/kcelectra-toxic-comment-detector_V1",
-                local_dir=MODEL_DIR,
-                local_dir_use_symlinks=False,    # 심볼릭 링크 금지
-                token=hf_token,
-            )
-
-def _ensure_dir(path, label):
-    if not os.path.isdir(path):
-        raise RuntimeError(f"[Startup] {label} 디렉터리가 없습니다: {path}")
-    if not os.listdir(path):
-        raise RuntimeError(f"[Startup] {label} 디렉터리가 비어 있습니다: {path}")
-
-# ↓↓↓ 여기서 보장
-ensure_hf_assets()
-_ensure_dir(TOKENIZER_DIR, "TOKENIZER")
-_ensure_dir(MODEL_DIR, "MODEL")
-
-# 토크나이저/모델 로드
-tokenizer = AutoTokenizer.from_pretrained(
-    TOKENIZER_DIR,
-    local_files_only=True,   # 이제 로컬에 확실히 존재함
-)
-
-model = AutoModelForSequenceClassification.from_pretrained(
-    MODEL_DIR,
-    local_files_only=True,
-    low_cpu_mem_usage=True,
-)
-
-# (선택) 양자화
-model = torch.quantization.quantize_dynamic(
-    model, {torch.nn.Linear}, dtype=torch.qint8
-)
-
-model.eval()
-torch.set_grad_enabled(False)
-torch.set_num_threads(1)
-device = torch.device("cpu")
-model.to(device)
+HF_MODEL_ID = "Junginn/kcelectra-toxic-comment-detector_V1"
+HF_API_URL = f"https://api-inference.huggingface.co/models/{HF_MODEL_ID}"
+HF_API_TOKEN = os.environ.get("HF_API_TOKEN")  # Render에 Protected로 설정
+HEADERS = {"Authorization": f"Bearer {HF_API_TOKEN}"} if HF_API_TOKEN else {}
 
 app = FastAPI()
 
@@ -85,47 +15,51 @@ class Request(BaseModel):
     text: str
 
 @app.post("/predict")
-def predict(request: Request):
-    text = request.text.strip()
+def predict(req: Request):
+    text = (req.text or "").strip()
+    if not text:
+        return {"error": "empty input"}
 
-    inputs = tokenizer(
-        text,
-        return_tensors="pt",
-        truncation=True,
-        padding="max_length",
-        max_length=150,
-        return_attention_mask=True,
-    ).to(device)
+    # HF Inference API로 프록시
+    resp = requests.post(HF_API_URL, headers=HEADERS, json={"inputs": text}, timeout=15)
+    if resp.status_code == 503:
+        # 모델 콜드스타트 중일 수 있음 → 잠시 후 재요청 안내
+        return {"error": "Model is loading. Please retry in a few seconds."}
+    if not resp.ok:
+        return {"error": f"HF API error {resp.status_code}", "detail": resp.text[:300]}
 
-    with torch.no_grad():
-        outputs = model(**inputs)
-        probs = torch.softmax(outputs.logits, dim=-1)
+    data = resp.json()
+    # 응답 형태: [[{"label": "LABEL_0", "score": 0.87}, ...]]
+    preds = data[0] if isinstance(data, list) else []
+    best = max(preds, key=lambda x: x.get("score", 0.0)) if preds else {"label": "LABEL_1", "score": 0.5}
 
-    label = torch.argmax(probs, dim=-1).item()
-    prob = probs[0][label].item()
-    label_text = "악플" if label == 0 else "일반 댓글"
+    label_id = 0 if best["label"].endswith("0") else 1
+    prob = float(best["score"])
+    label_text = "악플" if label_id == 0 else "일반 댓글"
 
     color = None
-    if label == 0:
-        if prob >= 0.65:
-            color = "red"
-        elif prob >= 0.5:
-            color = "orange"
+    if label_id == 0:
+        if prob >= 0.65: color = "red"
+        elif prob >= 0.5: color = "orange"
         else:
             label_text = "일반 댓글"
 
     return {
         "text": text,
-        "predicted_label": label,
+        "predicted_label": label_id,
         "label_name": label_text,
         "probability": round(prob, 4),
         "confidence_color": color,
+        "provider": "hf-inference-api"
     }
 
-# static 연결
-app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+# 정적 파일(선택)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/", response_class=HTMLResponse)
-def read_index():
-    with open(os.path.join(BASE_DIR, "static", "index.html"), "r", encoding="utf-8") as f:
-        return f.read()
+def index():
+    path = os.path.join("static", "index.html")
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "<h1>Toxic Comment Detector (Proxy Mode)</h1>"
