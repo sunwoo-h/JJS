@@ -3,8 +3,15 @@ services:
     name: toxic-comment-detector
     env: python
     plan: free
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    buildCommand: >
+      pip install --upgrade pip &&
+      pip install -r requirements.txt &&
+      python -c "import os; from huggingface_hub import snapshot_download;
+local='hf_model'; os.makedirs(local, exist_ok=True);
+snapshot_download(repo_id='Junginn/kcelectra-toxic-comment-detector_V1', local_dir=os.path.join(local,'model'), token=os.environ.get('HF_AUTH_TOKEN'));
+snapshot_download(repo_id='beomi/KcELECTRA-base', local_dir=os.path.join(local,'tokenizer'), token=os.environ.get('HF_AUTH_TOKEN'))"
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
-        value: 3.10
+        value: 3.11.9
+      # HF_AUTH_TOKEN 은 여기 말고 Render 대시보드 → Environment 에 추가(Protected)하세요.

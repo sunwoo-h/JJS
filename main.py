@@ -9,25 +9,35 @@ import os
 
 # 환경변수 불러오기
 load_dotenv()
-HF_AUTH_TOKEN = os.getenv("HF_AUTH_TOKEN")
-
-MODEL_NAME = "Junginn/kcelectra-toxic-comment-detector_V1"  # 실제 모델 경로로 수정
-TOKENIZER_NAME = "beomi/KcELECTRA-base"   # ✅ 토크나이저는 베이스에서
 
 
+HF_LOCAL_DIR = "hf_model"  # 빌드 때 받아둔 위치
+TOKENIZER_DIR = os.path.join(HF_LOCAL_DIR, "tokenizer")
+MODEL_DIR = os.path.join(HF_LOCAL_DIR, "model")
+
+# fast 토크나이저 (vocab.txt 필요 없음)
 tokenizer = AutoTokenizer.from_pretrained(
-    TOKENIZER_NAME,
-    token=HF_AUTH_TOKEN,       # use_auth_token 대신
+    TOKENIZER_DIR,
+    local_files_only=True,
 )
 
-
+# 모델은 저메모리 옵션으로 로드
 model = AutoModelForSequenceClassification.from_pretrained(
-    MODEL_NAME,
-    token=HF_AUTH_TOKEN       # 동일하게 token 파라미터 사용
+    MODEL_DIR,
+    local_files_only=True,
+    low_cpu_mem_usage=True,
 )
-model.tokenizer = tokenizer  # infer 함수에서 쓰기 위해
+
+# CPU 동적 양자화로 메모리 절감
+model = torch.quantization.quantize_dynamic(
+    model, {torch.nn.Linear}, dtype=torch.qint8
+)
+
 model.eval()
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+torch.set_grad_enabled(False)
+torch.set_num_threads(1)  # CPU 스레드 제한으로 메모리/오버헤드 감소
+
+device = torch.device("cpu")
 model.to(device)
 
 app = FastAPI()
