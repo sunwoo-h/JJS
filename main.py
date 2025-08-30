@@ -11,6 +11,8 @@ import os
 load_dotenv()
 HF_AUTH_TOKEN = os.getenv("HF_AUTH_TOKEN")
 MODEL_NAME = "Junginn/kcelectra-toxic-comment-detector_V1"  # 실제 모델 경로로 수정
+TOKENIZER_NAME = "beomi/KcELECTRA-base"   # ✅ 토크나이저는 베이스에서
+
 
 tokenizer = AutoTokenizer.from_pretrained(
     MODEL_NAME,
